@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DataTable } from '@/components/admin/DataTable';
+import { CategoryCard } from '@/components/admin/CategoryCard';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from '@/hooks/useCategories';
 import { useProducts, useUpdateProductsCategory } from '@/hooks/useProducts';
 import { generateSlug } from '@/lib/helpers';
@@ -254,8 +255,21 @@ export default function Categories() {
         </Button>
       </div>
 
-      {/* Table */}
-      <DataTable data={categories} columns={columns} emptyMessage="Nenhuma categoria encontrada" />
+      {/* Table / Cards */}
+      <DataTable
+        data={categories}
+        columns={columns}
+        emptyMessage="Nenhuma categoria encontrada"
+        mobileCard={(category) => (
+          <CategoryCard
+            category={category}
+            productCount={getProductCount(category.slug)}
+            onToggleActive={handleToggleActive}
+            onEdit={openEditModal}
+            onDelete={openDeleteDialog}
+          />
+        )}
+      />
 
       {/* Form Modal */}
       <Dialog open={formModal} onOpenChange={setFormModal}>

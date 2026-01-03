@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DataTable } from '@/components/admin/DataTable';
+import { TagCard } from '@/components/admin/TagCard';
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag, Tag } from '@/hooks/useTags';
 import { useProducts, useUpdateProductTags, useDeleteProductTagsBySlug } from '@/hooks/useProducts';
 import { generateSlug } from '@/lib/helpers';
@@ -254,8 +255,21 @@ export default function TagsPage() {
         </Button>
       </div>
 
-      {/* Table */}
-      <DataTable data={tags} columns={columns} emptyMessage="Nenhuma tag encontrada" />
+      {/* Table / Cards */}
+      <DataTable
+        data={tags}
+        columns={columns}
+        emptyMessage="Nenhuma tag encontrada"
+        mobileCard={(tag) => (
+          <TagCard
+            tag={tag}
+            productCount={getProductCount(tag.slug)}
+            onToggleActive={handleToggleActive}
+            onEdit={openEditModal}
+            onDelete={openDeleteDialog}
+          />
+        )}
+      />
 
       {/* Form Modal */}
       <Dialog open={formModal} onOpenChange={setFormModal}>

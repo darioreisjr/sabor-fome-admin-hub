@@ -51,7 +51,7 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        'relative flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out',
+        'relative hidden md:flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
       )}
     >

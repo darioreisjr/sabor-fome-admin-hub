@@ -1,16 +1,17 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Pencil, 
-  Copy, 
+import {
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Pencil,
+  Copy,
   Trash2,
   Check,
   X,
-  Loader2
+  Loader2,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,9 +29,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { DataTable } from '@/components/admin/DataTable';
 import { ProductBadge } from '@/components/admin/ProductBadge';
+import { ProductCard } from '@/components/admin/ProductCard';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, ProductWithTags } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
@@ -52,6 +61,7 @@ export default function Products() {
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [perPage, setPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Delete dialog
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; product: ProductWithTags | null }>({
@@ -272,8 +282,101 @@ export default function Products() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-card sm:flex-row sm:items-center">
+      {/* Filters - Mobile: Botão com Sheet */}
+      <div className="md:hidden">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar produtos..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-9"
+            />
+          </div>
+          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[400px] rounded-t-2xl">
+              <SheetHeader>
+                <SheetTitle>Filtros</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Categoria</label>
+                  <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas categorias</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.slug} value={cat.slug}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Disponibilidade</label>
+                  <Select value={availabilityFilter} onValueChange={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Disponibilidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="available">
+                        <span className="flex items-center gap-2">
+                          <Check className="h-3 w-3 text-success" />
+                          Disponíveis
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="unavailable">
+                        <span className="flex items-center gap-2">
+                          <X className="h-3 w-3 text-destructive" />
+                          Indisponíveis
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Itens por página</label>
+                  <Select value={perPage.toString()} onValueChange={(v) => { setPerPage(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={() => setFilterSheetOpen(false)}
+                  className="w-full"
+                >
+                  Aplicar Filtros
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Filters - Desktop/Tablet: Layout original */}
+      <div className="hidden md:flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-card">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -334,12 +437,26 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table / Cards */}
       <DataTable
         data={paginatedProducts}
         columns={columns}
         onRowClick={(product) => navigate(`/produtos/${product.id}`)}
         emptyMessage="Nenhum produto encontrado"
+        mobileCard={(product) => {
+          const cat = categories.find((c) => c.slug === product.category_slug);
+          return (
+            <ProductCard
+              product={product}
+              categoryName={cat?.name || product.category_slug}
+              onToggleAvailable={handleToggleAvailable}
+              onEdit={(p) => navigate(`/produtos/${p.id}`)}
+              onDuplicate={handleDuplicate}
+              onDelete={(p) => setDeleteDialog({ open: true, product: p })}
+              onClick={(p) => navigate(`/produtos/${p.id}`)}
+            />
+          );
+        }}
       />
 
       {/* Pagination */}
